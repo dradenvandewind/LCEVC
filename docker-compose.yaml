@@ -1,0 +1,85 @@
+version: '3.8'
+
+services:
+  build_gst:
+    build:
+       context: .
+       dockerfile: Dockerfile 
+    
+    shm_size: '1gb'
+    image: gstreamer_1.26_lcvec_beta
+    container_name: gstreamer
+    ipc: "host"
+    privileged: true
+    
+    # Modern GPU support for Docker Compose 3.8+
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: -1
+              capabilities: [gpu]
+    
+    restart: on-failure
+    command: ["/bin/bash","-c","sleep 36000"]
+    
+    environment:
+      - NVIDIA_DRIVER_CAPABILITIES=all
+      - NVIDIA_VISIBLE_DEVICES=all
+      - DISPLAY=:0
+      - XAUTHORITY=/tmp/.docker.xauth
+      - DBUS_SYSTEM_BUS_ADDRESS=unix:path=/host/run/dbus/system_bus_socket
+    
+    volumes:
+      - /sys:/sys
+      - $HOME/.Xauthority:/root/.Xauthority
+      - /run/dbus/system_bus_socket:/host/run/dbus/system_bus_socket
+      - /tmp/.X11-unix:/tmp/.X11-unix:rw
+      - /tmp/.docker.xauth:/tmp/.docker.xauth
+      - /dev/shm:/dev/shm:rw
+
+
+  gst-worker:
+    image: gstreamer_1.26_lcvec_beta
+    restart: on-failure
+    ipc: "host"
+    privileged: true
+    network_mode: "host"
+    
+    # GPU support for worker service
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: -1
+              capabilities: [gpu]
+     
+    environment:
+      - DISPLAY=:0
+      - XAUTHORITY=/tmp/.docker.xauth
+      - NVIDIA_DRIVER_CAPABILITIES=all
+      - NVIDIA_VISIBLE_DEVICES=all
+      - DBUS_SYSTEM_BUS_ADDRESS=unix:path=/host/run/dbus/system_bus_socket
+    
+    shm_size: '1gb'
+ 
+    healthcheck:
+      test: ["CMD", "gst-inspect-1.0", "||", "exit", "1"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+        
+    depends_on:
+      - build_gst
+    
+    volumes:
+      - /sys:/sys
+      - $HOME/.Xauthority:/root/.Xauthority
+      - /run/dbus/system_bus_socket:/host/run/dbus/system_bus_socket
+      - /tmp/.X11-unix:/tmp/.X11-unix:rw
+      - /tmp/.docker.xauth:/tmp/.docker.xauth
+ 
+    
+  
