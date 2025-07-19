@@ -1,0 +1,12 @@
+
+TODO LIST
+I need to examine the connection between tsdemux and xevddec. When using the gst_pipeline_debug.py script, the negotiation process fails to work properly. The xevddec plugin returns incorrect capabilities for establishing the connection with tsdemux, with some parameters being superfluous.
+The xeveenc and xevddec plugins are functional and can be used successfully.
+I still need to complete the implementation of inserting the LCEVC_video_descriptor() into the transport stream as specified in the T-REC-H.222.0-202308-S!!PDF-E.pdf document. I have just obtained the LCEVC standard draft, which will allow me to extract the necessary information from the NAL units.
+Key issues to address:
+
+Fix the capabilities returned by xevddec to improve negotiation with tsdemux
+Remove superfluous parameters from the capability negotiation
+Implement the LCEVC_video_descriptor() insertion according to H.222.0 standard
+Analyze the LCEVC draft for proper NAL unit data extraction
+
