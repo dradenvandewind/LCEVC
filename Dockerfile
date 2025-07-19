@@ -49,9 +49,6 @@ python3-distutils
 
 WORKDIR /root/workingsrc
 #PATCH mpegtsmux transport stream
-COPY ./enable-lcevc-in-mpegts-transportstream.patch /root/workingsrc/
-COPY ./enable-lcevc-in-mpegts-demuxer-transportstream.patch /root/workingsrc/
-COPY ./*.patch /root/workingsrc/
 RUN git clone https://github.com/v-novaltd/LCEVCdec.git && \
 cd LCEVCdec && \
 mkdir build && \
@@ -97,8 +94,7 @@ RUN git clone https://gitlab.freedesktop.org/gstreamer/gstreamer.git && \
 #raw souce https://media.xiph.org/video/derf/
 RUN wget https://media.xiph.org/video/derf/y4m/akiyo_cif.y4m 
 
-COPY display_conf.patch /root/workingsrc/display_conf.patch
-COPY add-logs.patch /root/workingsrc/add-logs.patch
+
 #add lcvec encoder
 RUN git clone https://github.com/mpeg5/xeve && \
 cd xeve && \
@@ -130,7 +126,7 @@ ldconfig
 
 
 COPY ./gst_pipeline*.py /root/workingsrc/
-COPY ../ts_start_pipeline.sh /root/workingsrc/
+COPY ../ts_start_end_to_end.sh /root/workingsrc/
 
 COPY ./lib4lcevc /root/workingsrc/
 RUN cp *.so /usr/lib/x86_64-linux-gnu/gstreamer-1.0/ && ldconfig
