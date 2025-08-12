@@ -16,6 +16,7 @@ ENV TF_FORCE_GPU_ALLOW_GROWTH=true
 ENV TF_ENABLE_GPU_GARBAGE_COLLECTION=false
 ENV PREFIX=/usr
 ENV TAG=1.26.2
+ENV TAGLCEVC=4.0.0
 ENV TZ=Europe/Paris
 
 # Timezone
@@ -51,6 +52,7 @@ WORKDIR /root/workingsrc
 #PATCH mpegtsmux transport stream
 RUN git clone https://github.com/v-novaltd/LCEVCdec.git && \
 cd LCEVCdec && \
+git checkout tags/$TAGLCEVC && \
 mkdir build && \
 cd build && \
 cmake .. -DCMAKE_INSTALL_PREFIX=/usr -DVN_SDK_EXECUTABLES=ON -DVN_SDK_UNIT_TESTS=ON -DCMAKE_BUILD_TYPE=Release -G Ninja && \
