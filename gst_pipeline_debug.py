@@ -14,6 +14,8 @@ from pathlib import Path
 
 gi.require_version('Gst', '1.0')
 from gi.repository import Gst, GLib
+# Set environment variable to specify where to save dot files
+os.environ['GST_DEBUG_DUMP_DOT_DIR'] = '/tmp/'
 
 class GstPipelineRunner:
     def __init__(self, debug_level="3"):
@@ -37,7 +39,7 @@ class GstPipelineRunner:
         
         # Fichiers
         self.input_file = "./akiyo_cif.y4m"
-        self.output_file = "./end_to_end.yuv"
+        self.output_file = "./end_to_end_from_ts.yuv"
         
     def create_element(self, factory_name, element_name=None):
         """Crée un élément GStreamer avec vérification"""
@@ -169,6 +171,8 @@ class GstPipelineRunner:
             tsdemux.connect("pad-added", self.on_pad_added)
             tsdemux.connect("no-more-pads", self.on_no_more_pads)
             
+            Gst.debug_bin_to_dot_file(self.pipeline, Gst.DebugGraphDetails.ALL, "pipeline_ts_created")
+            
             return True
             
         except Exception as e:
@@ -260,6 +264,10 @@ class GstPipelineRunner:
             if message.src == self.pipeline:
                 old_state, new_state, pending_state = message.parse_state_changed()
                 print(f"État pipeline: {old_state.value_name} -> {new_state.value_name}")
+                pipeline_name="main_pipeline_" + str(old_state.value_name) + "_" + str(new_state.value_name)
+                
+                Gst.debug_bin_to_dot_file(self.pipeline, Gst.DebugGraphDetails.ALL, pipeline_name)
+
             else:
                 # États des éléments individuels
                 old_state, new_state, pending_state = message.parse_state_changed()
