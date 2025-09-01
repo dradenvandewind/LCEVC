@@ -1,2 +1,4 @@
 /usr/lib/x86_64-linux-gnu/gstreamer-1.0/gstxevddec.so
-
+/usr/lib/x86_64-linux-gnu/gstreamer-1.0/gstxeveenc.so
+/usr/lib/x86_64-linux-gnu/gstreamer-1.0/libgstmpegtsdemux.so
+/usr/lib/x86_64-linux-gnu/gstreamer-1.0/libgstmpegtsmux.so
