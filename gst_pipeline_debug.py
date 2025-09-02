@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """
 GStreamer Pipeline Script utilisant ElementFactory pour encodage/décodage XEVE/XEVD
-Usage: python3 gst_pipeline.py [debug_level]
+Usage: python3 gst_pipeline.py [input_file] [width] [height] [debug_level]
 """
 
 import gi
@@ -18,16 +18,16 @@ from gi.repository import Gst, GLib
 os.environ['GST_DEBUG_DUMP_DOT_DIR'] = '/tmp/'
 
 class GstPipelineRunner:
-    def __init__(self, debug_level="3"):
-        # Initialisation de GStreamer
+    def __init__(self, input_file, width, height, output_file, debug_level="3"):
+        # Initialisze GStreamer
         Gst.init(None)
         
-        # Configuration du debug
+        # debug Configuration
         self.debug_level = debug_level
         os.environ['GST_DEBUG'] = debug_level
         os.environ['GST_DEBUG_NO_COLOR'] = '1'
         
-        # Debug spécifique pour les négociations de caps
+        # Specific debug for caps negotiations
         if int(debug_level) >= 4:
             os.environ['GST_DEBUG'] = f"GST_CAPS:5,GST_NEGOTIATION:5,GST_PADS:5,tsdemux:5,xeveenc:5,xevddec:5,{debug_level}"
         
@@ -37,55 +37,57 @@ class GstPipelineRunner:
         self.is_running = False
         self.elements = {}
         
-        # Fichiers
-        self.input_file = "./akiyo_cif.y4m"
-        self.output_file = "./end_to_end_from_ts.yuv"
+        # Fichiers et paramètres vidéo
+        self.input_file = input_file
+        self.width = width
+        self.height = height
+        self.output_file = output_file
         
     def create_element(self, factory_name, element_name=None):
-        """Crée un élément GStreamer avec vérification"""
+        """Create a GStreamer element with verification"""
         if element_name is None:
             element_name = factory_name
             
         factory = Gst.ElementFactory.find(factory_name)
         if not factory:
-            raise Exception(f"Factory '{factory_name}' introuvable")
+            raise Exception(f"Factory '{factory_name}' not found")
             
         element = factory.create(element_name)
         if not element:
-            raise Exception(f"Impossible de créer l'élément '{factory_name}'")
+            raise Exception(f"Unable to create element '{factory_name}'")
             
         self.elements[element_name] = element
         return element
     
     def create_pipeline(self):
-        """Crée le pipeline GStreamer avec ElementFactory"""
+        """Create the GStreamer pipeline with ElementFactory"""
         try:
-            # Création du pipeline
+            # Create pipeline
             self.pipeline = Gst.Pipeline.new("main-pipeline")
             
-            # Création des éléments
-            print("Création des éléments...")
+            # Create elements
+            print("Creating elements...")
             
             # Source
             filesrc = self.create_element("filesrc", "source")
             filesrc.set_property("location", self.input_file)
             
-            # Décodeur Y4M
+            # Y4M decoder
             y4mdec = self.create_element("y4mdec", "y4m_decoder")
             
-            # Conversion vidéo
+            # video Conversion 
             videoconvert = self.create_element("videoconvert", "converter")
             
-            # Filtre de caps pour format RAW
+            # Caps filter for RAW format
             capsfilter_raw = self.create_element("capsfilter", "caps_raw")
-            caps_raw = Gst.Caps.from_string("video/x-raw,width=352,height=288,format=I420")
+            caps_raw = Gst.Caps.from_string(f"video/x-raw,width={self.width},height={self.height},format=I420")
             capsfilter_raw.set_property("caps", caps_raw)
             
-            # Identity pour debug
+            # Identity for debug
             identity = self.create_element("identity", "identity")
             identity.set_property("silent", False)
             
-            # Encodeur XEVE
+            # XEVE encoder
             xeveenc = self.create_element("xeveenc", "encoder")
             xeveenc.set_property("rc_mode", 1)
             xeveenc.set_property("hash", 1)
@@ -95,7 +97,7 @@ class GstPipelineRunner:
             xeveenc.set_property("profile", 0)
             xeveenc.set_property("bitrate", 3000)
             
-            # Capssetter pour LVC1
+            # Capssetter for LVC1
             capssetter = self.create_element("capssetter", "caps_setter")
             caps_lvc1 = Gst.Caps.from_string("video/x-lvc1")
             capssetter.set_property("caps", caps_lvc1)
@@ -103,13 +105,13 @@ class GstPipelineRunner:
             # Queue
             queue = self.create_element("queue", "queue")
             
-            # Muxer MPEG-TS
+            # MPEG-TS muxer
             mpegtsmux = self.create_element("mpegtsmux", "muxer")
             
-            # Demuxer MPEG-TS
+            # MPEG-TS demuxer
             tsdemux = self.create_element("tsdemux", "demuxer")
             
-            # Décodeur XEVD
+            #  XEVD decoder
             xevddec = self.create_element("xevddec", "decoder")
             xevddec.set_property("hash", 1)
             xevddec.set_property("bit-depth", 10)
@@ -118,8 +120,8 @@ class GstPipelineRunner:
             filesink = self.create_element("filesink", "sink")
             filesink.set_property("location", self.output_file)
             
-            # Ajout des éléments au pipeline
-            print("Ajout des éléments au pipeline...")
+            # add elements to pipeline 
+            print("add elements to pipeline...")
             elements_to_add = [
                 filesrc, y4mdec, videoconvert, capsfilter_raw, identity,
                 xeveenc, capssetter, queue, mpegtsmux, tsdemux, xevddec, filesink
@@ -128,46 +130,46 @@ class GstPipelineRunner:
             for element in elements_to_add:
                 self.pipeline.add(element)
             
-            # Liaison des éléments statiques (jusqu'au tsdemux)
-            print("Liaison des éléments statiques...")
-            # Liaison des éléments statiques (jusqu'au tsdemux) - version pas à pas
-            print("Liaison des éléments statiques pas à pas...")
+            # Link static element (up to tsdemux)
+            print("Link static element ...")
+            # Link static element (up to tsdemux) 
+            print("Link static element  step after step ...")
 
-            # Liaison des éléments un par un
+            # Link elements one by one
             if not filesrc.link(y4mdec):
-                raise Exception("Échec de liaison filesrc -> y4mdec")
+                raise Exception("Failed to link filesrc -> y4mdec")
 
             if not y4mdec.link(videoconvert):
-                raise Exception("Échec de liaison y4mdec -> videoconvert")
+                raise Exception("Failed to link y4mdec -> videoconvert")
 
             if not videoconvert.link(capsfilter_raw):
-                raise Exception("Échec de liaison videoconvert -> capsfilter_raw")
+                raise Exception("Failed to link videoconvert -> capsfilter_raw")
 
             if not capsfilter_raw.link(identity):
-                raise Exception("Échec de liaison capsfilter_raw -> identity")
+                raise Exception("Failed to link capsfilter_raw -> identity")
 
             if not identity.link(xeveenc):
-                raise Exception("Échec de liaison identity -> xeveenc")
+                raise Exception("Failed to link identity -> xeveenc")
 
             if not xeveenc.link(capssetter):
-                raise Exception("Échec de liaison xeveenc -> capssetter")
+                raise Exception("Failed to link xeveenc -> capssetter")
 
             if not capssetter.link(queue):
-                raise Exception("Échec de liaison capssetter -> queue")
+                raise Exception("Failed to link capssetter -> queue")
 
             if not queue.link(mpegtsmux):
-                raise Exception("Échec de liaison queue -> mpegtsmux")
+                raise Exception("Failed to link queue -> mpegtsmux")
 
-            print("Tous les éléments statiques ont été liés avec succès")
+            print("All static elements linked successfully")
 
 
             
             # Liaison mpegtsmux -> tsdemux
-            print("Liaison mpegtsmux -> tsdemux...")
+            print("Linking mpegtsmux -> tsdemux...")
             if not Gst.Element.link(mpegtsmux, tsdemux):
-                raise Exception("Impossible de lier mpegtsmux -> tsdemux")
+                raise Exception("unable to link mpegtsmux -> tsdemux")
             
-            # Gestion des pads dynamiques du tsdemux
+            # Handle dynamic pads from tsdemux
             tsdemux.connect("pad-added", self.on_pad_added)
             tsdemux.connect("no-more-pads", self.on_no_more_pads)
             
@@ -176,137 +178,138 @@ class GstPipelineRunner:
             return True
             
         except Exception as e:
-            print(f"Erreur création pipeline: {e}")
+            print(f"Pipeline creation error: {e}")
             return False
     
     def on_pad_added(self, element, pad):
-        """Callback pour les pads dynamiques du tsdemux"""
+        """Callback for dynamics pads from tsdemux"""
         pad_name = pad.get_name()
-        print(f"🔗 Nouveau pad ajouté: {pad_name}")
+        print(f"🔗 New pads added: {pad_name}")
         
-        # Obtention des caps actuelles du pad source
+        # Get current caps from source pad
         src_caps = pad.get_current_caps()
         if not src_caps or src_caps.is_empty():
-            print(f"⚠️ Aucune caps disponible sur le pad {pad_name}")
+            print(f"⚠️ no caps available on pad {pad_name}")
             return
         
-        print(f"📄 Caps source: {src_caps.to_string()}")
+        print(f"📄  source Caps: {src_caps.to_string()}")
         
-        # Récupération du décodeur et son pad sink
+        # Get decoder and its sink pad
         decoder = self.elements.get("decoder")
         if not decoder:
-            print("❌ Decoder non trouvé")
+            print("❌ Decoder pad not found")
             return
             
         decoder_sink_pad = decoder.get_static_pad("sink")
         if not decoder_sink_pad:
-            print("❌ Pad sink du decoder non trouvé")
+            print("❌ sink pad not found")
             return
         
-        # Vérification des caps acceptées par le décodeur
-        decoder_sink_caps = decoder_sink_pad.query_caps(None)
-        print(f"📄 Caps acceptées par le décodeur: {decoder_sink_caps.to_string()}")
+        # Check caps accepted by decoder
         
-        # Vérification de la compatibilité des caps
+        decoder_sink_caps = decoder_sink_pad.query_caps(None)
+        print(f"📄 Caps accepted by decoder: {decoder_sink_caps.to_string()}")
+        
+        # Checks caps compatibility
         intersection = src_caps.intersect(decoder_sink_caps)
         if intersection.is_empty():
-            print("❌ Les formats ne sont pas compatibles")
+            print("❌ formats are not compatible")
             print(f"Source: {src_caps.to_string()}")
             print(f"Decoder: {decoder_sink_caps.to_string()}")
             return
         
-        print(f"✅ Formats compatibles: {intersection.to_string()}")
+        print(f"✅ Compatibles formats: {intersection.to_string()}")
         
-        # Tentative de liaison
-        print(f"🔄 Tentative de liaison {pad_name} -> decoder...")
+        # Attempt to link
+        print(f"🔄 Attempting to link  {pad_name} -> decoder...")
         link_result = pad.link(decoder_sink_pad)
         
         if link_result == Gst.PadLinkReturn.OK:
-            print("✅ Liaison réussie")
+            print("✅ Link sucessfull")
             
-            # Liaison du décodeur au filesink
+            # Link décoder to filesink
             filesink = self.elements.get("sink")
             if filesink and Gst.Element.link(decoder, filesink):
-                print("✅ Pipeline entièrement connecté!")
+                print("✅ Pipeline fully connected!")
             else:
-                print("❌ Erreur liaison decoder -> filesink")
+                print("❌ Error linking decoder -> filesink")
         else:
-            print(f"❌ Erreur de liaison: {link_result}")
+            print(f"❌ Link error: {link_result}")
                         
     def on_no_more_pads(self, element):
-        """Callback quand tous les pads sont créés"""
-        print("Tous les pads dynamiques ont été créés")
+        """Callback when all pads are created """
+        print("all dynamics pads have been created")
     
     def on_message(self, bus, message):
-        """Gestionnaire de messages du bus GStreamer"""
+        """GStreamer bus message handler"""
         mtype = message.type
         
         if mtype == Gst.MessageType.EOS:
-            print("Fin du stream (EOS)")
+            print("End of stream (EOS)")
             self.stop()
             
         elif mtype == Gst.MessageType.ERROR:
             err, debug = message.parse_error()
-            print(f"Erreur: {err}")
+            print(f"Error: {err}")
             print(f"Debug: {debug}")
             
-            # Affichage des éléments problématiques
+            # Display problematic elements
             if message.src:
-                print(f"Source de l'erreur: {message.src.get_name()}")
+                print(f"Error source: {message.src.get_name()}")
             
             self.stop()
             
         elif mtype == Gst.MessageType.WARNING:
             err, debug = message.parse_warning()
-            print(f"Attention: {err}")
+            print(f"Warning: {err}")
             
         elif mtype == Gst.MessageType.STATE_CHANGED:
             if message.src == self.pipeline:
                 old_state, new_state, pending_state = message.parse_state_changed()
-                print(f"État pipeline: {old_state.value_name} -> {new_state.value_name}")
+                print(f" pipeline state: {old_state.value_name} -> {new_state.value_name}")
                 pipeline_name="main_pipeline_" + str(old_state.value_name) + "_" + str(new_state.value_name)
                 
                 Gst.debug_bin_to_dot_file(self.pipeline, Gst.DebugGraphDetails.ALL, pipeline_name)
 
             else:
-                # États des éléments individuels
+                # Individual element states
                 old_state, new_state, pending_state = message.parse_state_changed()
                 element_name = message.src.get_name() if message.src else "unknown"
-                print(f"État {element_name}: {old_state.value_name} -> {new_state.value_name}")
+                print(f"State {element_name}: {old_state.value_name} -> {new_state.value_name}")
                 
         elif mtype == Gst.MessageType.ELEMENT:
-            # Messages des éléments
+            # Elements messages
             struct = message.get_structure()
             if struct:
                 element_name = message.src.get_name() if message.src else "unknown"
-                print(f"Message de '{element_name}': {struct.get_name() if hasattr(struct, 'get_name') else 'unknown'}")
+                print(f"Message from '{element_name}': {struct.get_name() if hasattr(struct, 'get_name') else 'unknown'}")
                 
         elif mtype == Gst.MessageType.STREAM_STATUS:
-            # Status des streams
+            # Streams status
             status_type, owner = message.parse_stream_status()
             owner_name = owner.get_name() if owner else "unknown"
-            print(f"Stream status de {owner_name}: {status_type.value_name}")
+            print(f"Stream status from {owner_name}: {status_type.value_name}")
             
         elif mtype == Gst.MessageType.ASYNC_DONE:
-            print("Pipeline prêt (ASYNC_DONE)")
+            print("Pipeline ready (ASYNC_DONE)")
             
         elif mtype == Gst.MessageType.NEW_CLOCK:
             clock = message.parse_new_clock()
-            print(f"Nouvelle horloge: {clock.get_name()}")
+            print(f"New clock: {clock.get_name()}")
             
         elif mtype == Gst.MessageType.STREAM_START:
-            print("Début du stream")
+            print("stream start")
             
-        elif mtype == getattr(Gst.MessageType, 'CAPS', None):   # Cette valeur existe bien dans les versions récentes de GStreamer
-            # Changement de caps
+        elif mtype == getattr(Gst.MessageType, 'CAPS', None):   
+            # caps change
             element_name = message.src.get_name() if message.src else "unknown"
             print(f"Changement de caps sur {element_name}")
             
         elif mtype == Gst.MessageType.TAG:
-            # Tags/métadonnées
+            # Tags/métadata
             taglist = message.parse_tag()
             element_name = message.src.get_name() if message.src else "unknown"
-            print(f"Tags de {element_name}: {taglist.to_string()}")
+            print(f"Tags from {element_name}: {taglist.to_string()}")
             
         elif mtype == Gst.MessageType.BUFFERING:
             # Buffering
@@ -316,20 +319,20 @@ class GstPipelineRunner:
         return True
     
     def check_files(self):
-        """Vérifie l'existence des fichiers"""
+        """Check file existence"""
         if not Path(self.input_file).exists():
-            print(f"Erreur: Fichier d'entrée '{self.input_file}' introuvable")
+            print(f"Error : Input file '{self.input_file}' not found")
             return False
             
-        # Supprime le fichier de sortie s'il existe
+        # Delete output file if it exists
         if Path(self.output_file).exists():
             Path(self.output_file).unlink()
-            print(f"Fichier de sortie '{self.output_file}' supprimé")
+            print(f"Output file '{self.output_file}' deleted")
             
         return True
     
     def check_elements(self):
-        """Vérifie la disponibilité des éléments GStreamer"""
+        """Check GStreamer element availability"""
         required_elements = [
             'filesrc', 'y4mdec', 'videoconvert', 'capsfilter', 'identity',
             'xeveenc', 'capssetter', 'queue', 'mpegtsmux',
@@ -342,33 +345,33 @@ class GstPipelineRunner:
             if not factory:
                 missing_elements.append(element)
             else:
-                # Affichage des informations sur l'élément
+                # Display element information
                 klass = factory.get_klass()
                 print(f"✓ {element}: {klass}")
         
         if missing_elements:
-            print(f"Éléments manquants: {', '.join(missing_elements)}")
-            print("Installez les plugins GStreamer nécessaires")
+            print(f"Missing elements: {', '.join(missing_elements)}")
+            print("Install required GStreamer plugins")
             return False
             
         return True
     
     def print_element_properties(self, element_name):
-        """Affiche les propriétés d'un élément"""
+        """ Display element properties"""
         element = self.elements.get(element_name)
         if not element:
             return
             
-        print(f"\nPropriétés de {element_name}:")
+        print(f"\nProperties of {element_name}:")
         for prop in element.list_properties():
             try:
                 value = element.get_property(prop.name)
                 print(f"  {prop.name}: {value} ({prop.value_type.name})")
             except:
-                print(f"  {prop.name}: (non lisible)")
+                print(f"  {prop.name}: (unreadable)")
     
     def run(self):
-        """Lance le pipeline"""
+        """Start the pipeline"""
         if not self.check_files():
             return False
             
@@ -378,43 +381,43 @@ class GstPipelineRunner:
         if not self.create_pipeline():
             return False
         
-        # Affichage des propriétés (debug)
+        # Display properties (debug)
         if self.debug_level >= "4":
             self.print_element_properties("encoder")
             self.print_element_properties("decoder")
         
-        # Configuration du bus
+        # bus configuration
         bus = self.pipeline.get_bus()
         bus.add_signal_watch()
         bus.connect("message", self.on_message)
         
-        # Démarrage du pipeline
-        print("Démarrage du pipeline...")
+        # Start pipeline
+        print("Start pipeline...")
         ret = self.pipeline.set_state(Gst.State.PLAYING)
         
         if ret == Gst.StateChangeReturn.FAILURE:
-            print("Impossible de démarrer le pipeline")
+            print("unable to start pipeline")
             return False
         elif ret == Gst.StateChangeReturn.ASYNC:
-            print("Démarrage asynchrone...")
+            print("Asynchronous startup...")
         
-        # Boucle d'événements
+        # Event loop
         self.loop = GLib.MainLoop()
         self.is_running = True
         
         try:
-            print("Pipeline en cours d'exécution... (Ctrl+C pour arrêter)")
+            print("Pipeline running... (Ctrl+C to stop)")
             self.loop.run()
         except KeyboardInterrupt:
-            print("\nInterruption utilisateur")
+            print("\n User Interruption ")
             self.stop()
         
         return True
     
     def stop(self):
-        """Arrête le pipeline"""
+        """ Stop the pipeline"""
         if self.is_running:
-            print("Arrêt du pipeline...")
+            print(" Stopping pipeline...")
             self.is_running = False
             
             if self.pipeline:
@@ -424,10 +427,10 @@ class GstPipelineRunner:
                 self.loop.quit()
     
     def get_progress(self):
-        """Affiche le progrès"""
+        """ Display progress """
         if self.pipeline and self.is_running:
             try:
-                # Requête de position et durée
+                # Query position and duration
                 success_pos, position = self.pipeline.query_position(Gst.Format.TIME)
                 success_dur, duration = self.pipeline.query_duration(Gst.Format.TIME)
                 
@@ -436,31 +439,56 @@ class GstPipelineRunner:
                     if success_dur and duration > 0:
                         dur_sec = duration / Gst.SECOND
                         progress = (position / duration) * 100
-                        print(f"Progrès: {pos_sec:.1f}s / {dur_sec:.1f}s ({progress:.1f}%)")
+                        print(f"Progress: {pos_sec:.1f}s / {dur_sec:.1f}s ({progress:.1f}%)")
                     else:
                         print(f"Position: {pos_sec:.1f}s")
             except:
                 pass
 
 def signal_handler(signum, frame):
-    """Gestionnaire de signal pour arrêt propre"""
-    print("\nSignal reçu, arrêt en cours...")
+    """Signal handler for clean shutdown"""
+    print("\nSignal received, shutting down...")
     sys.exit(0)
+
+def print_usage():
+    """Affiche l'utilisation du script"""print("Usage: python3 gst_pipeline.py [input_file] [width] [height] [output_file] [debug_level]")
+    print(" input_file: Path to input file")
+    print(" width: Video width")
+    print(" height: Video height")
+    print(" output_file: Path to output file")
+    print(" debug_level: Debug level (optional, default: 3)")
 
 def main():
     # Configuration des signaux
     signal.signal(signal.SIGINT, signal_handler)
     signal.signal(signal.SIGTERM, signal_handler)
     
-    # Niveau de debug depuis les arguments
-    debug_level = sys.argv[1] if len(sys.argv) > 1 else "3"
+    # Vérification des arguments
+    if len(sys.argv) < 5:
+        print_usage()
+        sys.exit(1)
     
-    print(f"Démarrage avec niveau de debug: {debug_level}")
+    # Récupération des paramètres
+    input_file = sys.argv[1]
     
-    # Création et lancement du runner
-    runner = GstPipelineRunner(debug_level)
+    try:
+        width = int(sys.argv[2])
+        height = int(sys.argv[3])
+    except ValueError:
+        print("Erreur: width et height doivent être des nombres entiers")
+        sys.exit(1)
+    output_file = sys.argv[4]
     
-    # Thread pour afficher le progrès
+    #Debug level from arguments
+    debug_level = sys.argv[5] if len(sys.argv) > 5 else "3"
+    
+    print(f"Starting with parameters: input_file={input_file}, width={width}, height={height}, output_file={output_file}, debug_level={debug_level}")
+    
+    
+    # Create and run runner
+    runner = GstPipelineRunner(input_file, width, height, debug_level)
+    
+    # # Thread to display progress
     def progress_thread():
         while runner.is_running:
             runner.get_progress()
@@ -469,16 +497,16 @@ def main():
     progress_t = threading.Thread(target=progress_thread, daemon=True)
     progress_t.start()
     
-    # Lancement
+    # Start
     success = runner.run()
     
     if success:
-        print("Pipeline terminé avec succès")
+        print("Pipeline completed successfully")
         if Path(runner.output_file).exists():
             size = Path(runner.output_file).stat().st_size
-            print(f"Fichier de sortie créé: {runner.output_file} ({size} octets)")
+            print(f"Output file created: {runner.output_file} ({size} bytes)")
     else:
-        print("Erreur lors de l'exécution du pipeline")
+        print("Error durung pipeline execution ")
         sys.exit(1)
 
 if __name__ == "__main__":
