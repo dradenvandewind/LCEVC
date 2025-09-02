@@ -13,3 +13,9 @@ gst-inspect-1.0 xevddec
 
 To ensure compatibility with transport streams, the tsdemux and mpegtsmux plugins have been modified to support the video/x-lvc1 codec.
 
+You can try it with test script python3 gst_pipeline_to_test_ts_features.py [input_file] [width] [height] [output_file] [debug_level]"
+
+ gst_pipeline_to_test_ts_features.py akiyo_cif.y4m 352 288 akiyo_cif_after.yuv 3
+
+
+You can display diagramm pipeline with dot file in /tmp directory
