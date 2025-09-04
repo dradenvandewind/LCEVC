@@ -7,10 +7,11 @@ services:
        dockerfile: Dockerfile 
     
     shm_size: '1gb'
-    image: gstreamer_1.26_lcvec_beta
-    container_name: gstreamer
+    image: gstreamer_1.26_lcvec_beta_2
+    container_name: gstreamer_2
     ipc: "host"
     privileged: true
+    network_mode: "host"
     
     # Modern GPU support for Docker Compose 3.8+
     deploy:
@@ -22,7 +23,10 @@ services:
               capabilities: [gpu]
     
     restart: on-failure
-    command: ["/bin/bash","-c","sleep 36000"]
+    #command: ["/bin/bash","-c","sleep 36000"]
+    #entrypoint: ["/bin/sh", "/test_h264.sh"]
+    entrypoint: ["/bin/sh", "/test_shaka.sh"]
+
     
     environment:
       - NVIDIA_DRIVER_CAPABILITIES=all
@@ -32,6 +36,8 @@ services:
       - DBUS_SYSTEM_BUS_ADDRESS=unix:path=/host/run/dbus/system_bus_socket
     
     volumes:
+      - ./test_shaka.sh:/test_shaka.sh:ro
+      - ./test_h264.sh:/test_h264.sh:ro
       - /sys:/sys
       - $HOME/.Xauthority:/root/.Xauthority
       - /run/dbus/system_bus_socket:/host/run/dbus/system_bus_socket
@@ -39,9 +45,26 @@ services:
       - /tmp/.docker.xauth:/tmp/.docker.xauth
       - /dev/shm:/dev/shm:rw
 
+  shaka:
+    image: google/shaka-packager:latest
+    container_name: shaka
+    entrypoint: ["/bin/sh", "/packager2.sh"]
+    network_mode: "host"
+    depends_on:
+      - gst-worker_2
 
-  gst-worker:
-    image: gstreamer_1.26_lcvec_beta
+    environment:
+      - UDP_PORT=10000
+      - SEGMENT_DURATION=4
+      - DASH_MANIFEST=manifest.mpd
+      - HLS_MASTER=master.m3u8
+    volumes:
+      - ./packager.sh:/packager.sh:ro
+      - ./packager2.sh:/packager2.sh:ro
+      - ./output:/output
+
+  gst-worker_2:
+    image: gstreamer_1.26_lcvec_beta_2
     restart: on-failure
     ipc: "host"
     privileged: true
