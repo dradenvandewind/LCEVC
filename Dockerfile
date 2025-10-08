@@ -16,7 +16,7 @@ ENV TF_FORCE_GPU_ALLOW_GROWTH=true
 ENV TF_ENABLE_GPU_GARBAGE_COLLECTION=false
 ENV PREFIX=/usr
 ENV TAG=1.26.2
-ENV TAGLCEVC=4.0.0
+ENV TAGLCEVC=3.3.6
 ENV TZ=Europe/Paris
 
 # Timezone
@@ -79,7 +79,31 @@ RUN apt-get update && apt-get install -y --no-install-recommends  flex bison \
     python3-dev \
     meson ninja-build git \
     libglib2.0-dev libgirepository1.0-dev gobject-introspection \
-    libffi-dev libtool pkg-config curl wget libxml2-dev
+    libffi-dev libtool pkg-config curl wget libxml2-dev autogen automake nasm
+
+
+
+RUN echo "Fetching x264..." && \
+git clone https://github.com/mirror/x264.git && \
+cd x264 && \
+echo "Building x264..." && \
+./configure --prefix=/usr/local --enable-pic --enable-shared && make && make install
+
+RUN apt update && \
+apt install -y build-essential cmake git nasm yasm mercurial libnuma-dev cmake-curses-gui cmake   
+RUN echo "Building x265..." && \
+git clone https://bitbucket.org/multicoreware/x265_git.git && \
+cd x265_git/source && \
+mkdir -p build && \
+cd build && \
+cmake .. \
+        -DCMAKE_INSTALL_PREFIX=/usr/local \
+        -DENABLE_SHARED=ON \
+        -DENABLE_CLI=ON \
+        -DENABLE_PIC=ON \
+        -DENABLE_ASSEMBLY=ON && \
+make -j$(nproc) && \
+make install && ldconfig
 
 RUN pip install "setuptools<65" meson==1.4.0
 RUN apt-get install -y libc6-dev 
@@ -88,6 +112,9 @@ RUN git clone https://gitlab.freedesktop.org/gstreamer/gstreamer.git && \
   git checkout tags/$TAG && \
   mkdir build && cd build && \
   meson setup ..            \
+       -Dgpl=enabled -Dugly=enabled -Dgst-plugins-ugly:x264=enabled \
+       -Dgst-plugins-bad:x265=enabled -Dbad=enabled \
+       -Dgst-plugins-bad:lcevcdecoder=enabled \
        --prefix=/usr       \
        --buildtype=release && \
   ninja && \

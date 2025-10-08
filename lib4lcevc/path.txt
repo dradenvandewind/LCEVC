@@ -13,5 +13,7 @@ cp /usr/lib/x86_64-linux-gnu/gstreamer-1.0/gstlvcompositor.so .
  ./cp_fromdocker.sh libgstmpegtsdemux.so && \
  mv /home/erwan/libgstmpegtsdemux.so /home/erwan/sandbox/lcevc/LCEVC/lib4lcevc/ && \
  ./cp_fromdocker.sh libgstmpegtsmux.so && \
- mv /home/erwan/libgstmpegtsmux.so /home/erwan/sandbox/lcevc/LCEVC/lib4lcevc/ 
+ mv /home/erwan/libgstmpegtsmux.so /home/erwan/sandbox/lcevc/LCEVC/lib4lcevc/ && \
+./cp_fromdocker.sh gstlvcompositor.so && \
+ mv /home/erwan/gstlvcompositor.so /home/erwan/sandbox/lcevc/LCEVC/lib4lcevc/ 
 
