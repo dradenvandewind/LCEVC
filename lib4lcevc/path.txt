@@ -2,8 +2,9 @@ cp /usr/lib/x86_64-linux-gnu/gstreamer-1.0/gstxevddec.so . && \
 cp /usr/lib/x86_64-linux-gnu/gstreamer-1.0/gstxeveenc.so . && \
 cp /usr/lib/x86_64-linux-gnu/gstreamer-1.0/libgstmpegtsdemux.so . && \
 cp /usr/lib/x86_64-linux-gnu/gstreamer-1.0/libgstmpegtsmux.so . && \
-cp /usr/lib/x86_64-linux-gnu/gstreamer-1.0/gstlvcompositor.so .
-
+cp /usr/lib/x86_64-linux-gnu/gstreamer-1.0/gstlvcompositor.so . && \
+cp /usr/lib/x86_64-linux-gnu/gstreamer-1.0/libgsth266enc.so . && \
+cp /usr/lib/x86_64-linux-gnu/libvvenc_lib.so .
 
 
 ./cp_fromdocker.sh gstxevddec.so && \
@@ -15,5 +16,9 @@ cp /usr/lib/x86_64-linux-gnu/gstreamer-1.0/gstlvcompositor.so .
  ./cp_fromdocker.sh libgstmpegtsmux.so && \
  mv /home/erwan/libgstmpegtsmux.so /home/erwan/sandbox/lcevc/LCEVC/lib4lcevc/ && \
 ./cp_fromdocker.sh gstlvcompositor.so && \
- mv /home/erwan/gstlvcompositor.so /home/erwan/sandbox/lcevc/LCEVC/lib4lcevc/ 
+ mv /home/erwan/gstlvcompositor.so /home/erwan/sandbox/lcevc/LCEVC/lib4lcevc/ && \
+./cp_fromdocker.sh libgsth266enc.so && \
+mv /home/erwan/libgsth266enc.so /home/erwan/sandbox/lcevc/LCEVC/lib4lcevc/ && \
+./cp_fromdocker.sh libvvenc_lib.so && \
+mv /home/erwan/libvvenc_lib.so /home/erwan/sandbox/lcevc/LCEVC/lib4lcevc/ 
 

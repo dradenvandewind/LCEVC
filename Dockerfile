@@ -152,13 +152,25 @@ ldconfig
 #xevd_app -i akyio.evc -o akyio_lcvev.yuv
 #
 
+RUN git clone https://github.com/fraunhoferhhi/vvenc.git vvenc-1.4.0 && \
+cd vvenc-1.4.0 && \
+git checkout tags/v1.4.0 && \
+mkdir build && \
+cd build && \
+cmake .. -DCMAKE_INSTALL_PREFIX=/usr -DCMAKE_BUILD_TYPE=Release -DBUILD_SHARED_LIBS=ON && \
+make && \
+make install && \
+ldconfig && cd ../..
+
 
 
 COPY ./gst_pipeline*.py /root/workingsrc/
 COPY ../ts_start_end_to_end.sh /root/workingsrc/
+COPY ../test_h266_10_bit.sh /root/workingsrc/
 
 COPY ./lib4lcevc /root/workingsrc/
 RUN cp *.so /usr/lib/x86_64-linux-gnu/gstreamer-1.0/ && ldconfig
+RUN cp libvvenc_lib.so /usr/lib/x86_64-linux-gnu/libvvenc_lib.so && ldconfig 
 
 RUN export GST_DEBUG_DUMP_DOT_DIR=/tmp/
 
