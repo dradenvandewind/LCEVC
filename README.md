@@ -199,7 +199,7 @@ Element Properties:
 
 
 
-To ensure compatibility with transport streams, the tsdemux and mpegtsmux plugins have been modified to support the video/x-lvc1 codec.
+To ensure compatibility with transport streams, the tsdemux and mpegtsmux plugins have been modified to support the video/x-evc codec.
 
 To test the element, a GStreamer tool named ‘gst-launch’ can be used to test a simple pipeline as shown in figure below. 
 
