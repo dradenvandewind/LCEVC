@@ -25,7 +25,7 @@ EVC decoder libraries currently supported by the plugin are:
 
 In the next section, we demonstrate the usage of the plugins
 
-## Usage of the plugin
+## Usage of the xeveenc plugin
 
 ```
     gst-inspect-1.0 xeveenc
@@ -55,7 +55,7 @@ Pad Templates:
 
 ```
 
-```
+
 
 Following are the supported element properties:
 ```
@@ -119,13 +119,12 @@ Element Properties:
 
 
 
-
+## Usage of the xevddec plugin
 
 ```
     gst-inspect-1.0 xevddec
 ```
 Following are the pad templates supported by the plugin:
-
 
 ```
 Pad Templates:
@@ -204,7 +203,7 @@ To ensure compatibility with transport streams, the tsdemux and mpegtsmux plugin
 
 To test the element, a GStreamer tool named ‘gst-launch’ can be used to test a simple pipeline as shown in figure below. 
 
-![example pipeline](/images/images/main_pipeline_raw_to_ts_raw.png)
+![example pipeline](/images/main_pipeline_raw_to_ts_raw.png)
  
 
 evc + Ts stream :
@@ -213,7 +212,7 @@ python3 gst_pipeline_to_test_ts_features.py [input_file] [width] [height] [outpu
 ```
  gst_pipeline_to_test_ts_features.py akiyo_cif.y4m 352 288 akiyo_cif_after.yuv 3
 
-![example pipeline](/images/images/end_to_end_raw_to_raw.png)
+![example pipeline](/images/end_to_end_raw_to_raw.png)
 
 
 evc raw to raw  :
